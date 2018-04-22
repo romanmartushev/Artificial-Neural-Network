@@ -14,10 +14,13 @@ def main():
     alpha = .09
     value = 0.0
     outputList = []
+    outputList1 = []
     outputs = []
     RMSE = 0.0
     oldRMSE = 0.0
     errors = []
+    max = 0.0
+    min = 0.0
     # Array for each hidden node with as many values input + bias nodes
     weightsHI = [[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)]]
     # Array for each output node with as many values as hidden nodes + bias Nodes
@@ -39,12 +42,22 @@ def main():
         writer.writerows(myData)
 
     #data = open("small.csv",'r')
-    #data = open("f(x)2x.csv",'r')
-    data = open("sin(x).csv",'r')
+    data = open("f(x)2x.csv",'r')
+    #data = open("sin(x).csv",'r')
     with data as d:
         reader = csv.reader(d)
         for row in reader:
-            outputList.append(float(row[0]))
+            outputList1.append(float(row[0]))
+    max = np.amax(outputList1)*2
+    min = np.amin(outputList1)*2
+
+    #data = open("small.csv",'r')
+    data = open("f(x)2x.csv",'r')
+    #data = open("sin(x).csv",'r')
+    with data as d:
+        reader = csv.reader(d)
+        for row in reader:
+            outputList.append(float((float(row[0]) - min)/(max - min)))
 
     shuffle(outputList)
     l = len(outputList)/2
@@ -68,7 +81,7 @@ def main():
             if not type(nodesH[k]) is BiasNode:
                 for i in range(0,len(nodesI)):
                     if type(nodesI[i]) is BiasNode:
-                        value += nodesI[i].getOutput() * weightsHI[k][i]
+                        value += nodesI[i].getOutput(max,min) * weightsHI[k][i]
                     else:
                         value += nodesI[i].getOutput() * weightsHI[k][i]
                 nodesH[k].sigmoid(value)
@@ -78,7 +91,7 @@ def main():
             value = 0
             for i in range(0,len(nodesH)):
                 if type(nodesH[i]) is BiasNode:
-                    value += nodesH[i].getOutput() * weightsOH[k][i]
+                    value += nodesH[i].getOutput(max,min) * weightsOH[k][i]
                 else:
                     value += nodesH[i].getOutput() * weightsOH[k][i]
             nodesO[k].sigmoid(value)
@@ -87,15 +100,16 @@ def main():
         #CHECK
         ###################################
         for i in range(0,len(nodesO)):
-            outputs.append(nodesO[i].getOutput())
+            outputs.append(2*(nodesO[i].getOutput() * (max - min) + min))
             errors.append(pow(train[j]-nodesO[i].getOutput(),2))
             if RMSE <= oldRMSE:
-                myData =[[train[j],nodesO[i].getOutput(),sin(train[j])]]
+                myData =[[train[j] * (max - min) + min,2*(nodesO[i].getOutput() * (max - min) + min),2*(train[j] * (max - min) + min)]]
                 myFile = myFile = open('outputs.csv','a')
                 with myFile:
                     writer = csv.writer(myFile)
                     writer.writerows(myData)
-            print("beginning input: " + str(train[j] ) + " current result: " + str(nodesO[i].getOutput()) + " actual: " + str(sin(train[j])) + " epoch: " + str(count))
+            print("beginning input: " + str(train[j] * (max - min) + min) + " current result: " + str(2*(nodesO[i].getOutput() * (max - min) + min)) + " actual: " + str(2*(train[j] * (max - min) + min)) + " epoch: " + str(count))
+            #print("beginning input: " + str(train[j]) + " current result: " + str(nodesO[i].getOutput()) + " actual: " + str(train[j]*2) + " iteration: " + str(count))
 
 
         ###################################
@@ -104,7 +118,7 @@ def main():
 
         #Calculate Delta for Output Layer
         for i in range(0,len(nodesO)):
-            nodesO[i].setDelta(train[j])
+            nodesO[i].setDelta(train[j],max,min)
 
         #Calculate Delta for all non-bias nodes Hidden Layer
         for k in range(0,len(nodesH)):
@@ -118,7 +132,7 @@ def main():
         for i in range(0,len(nodesO)):
             for k in range(0,len(nodesH)):
                 if type(nodesH[k]) is BiasNode:
-                    weightsOH[i][k] = weightsOH[i][k] - (alpha) * nodesO[i].getDelta() * nodesH[k].getOutput()
+                    weightsOH[i][k] = weightsOH[i][k] - (alpha) * nodesO[i].getDelta() * nodesH[k].getOutput(max,min)
                 else:
                     weightsOH[i][k] = weightsOH[i][k] - (alpha) * nodesO[i].getDelta() * nodesH[k].getOutput()
 
@@ -127,7 +141,7 @@ def main():
             if not type(nodesH[i]) is BiasNode:
                 for k in range(0,len(nodesI)):
                     if type(nodesI[k]) is BiasNode:
-                        weightsHI[i][k] = weightsHI[i][k] - 2*(alpha) * nodesH[i].getDelta() * nodesI[k].getOutput()
+                        weightsHI[i][k] = weightsHI[i][k] - 2*(alpha) * nodesH[i].getDelta() * nodesI[k].getOutput(max,min)
                     else:
                         weightsHI[i][k] = weightsHI[i][k] - 2*(alpha) * nodesH[i].getDelta() * nodesI[k].getOutput()
         j = j + 1
@@ -151,7 +165,7 @@ def main():
             if count != 10000:
                 errors = []
                 outputs = []
-            shuffle(train)
+            #shuffle(train)
 
     myData = [[]]
     myData = [["weightsHO:"]]
@@ -189,7 +203,7 @@ def main():
         writer.writerows(myData)
 
     for i in range(0,len(outputs)):
-        myData = [[outputs[i],sin(train[i])]]
+        myData = [[outputs[i],2*(train[i] * (max - min) + min)]]
         myFile = myFile = open('final.csv','a')
         with myFile:
             writer = csv.writer(myFile)
@@ -215,7 +229,7 @@ def main():
             if not type(nodesH[k]) is BiasNode:
                 for i in range(0,len(nodesI)):
                     if type(nodesI[i]) is BiasNode:
-                        value += nodesI[i].getOutput() * weightsHI[k][i]
+                        value += nodesI[i].getOutput(max,min) * weightsHI[k][i]
                     else:
                         value += nodesI[i].getOutput() * weightsHI[k][i]
                 nodesH[k].sigmoid(value)
@@ -225,7 +239,7 @@ def main():
             value = 0
             for i in range(0,len(nodesH)):
                 if type(nodesH[i]) is BiasNode:
-                    value += nodesH[i].getOutput() * weightsOH[k][i]
+                    value += nodesH[i].getOutput(max,min) * weightsOH[k][i]
                 else:
                     value += nodesH[i].getOutput() * weightsOH[k][i]
             nodesO[k].sigmoid(value)
@@ -234,12 +248,13 @@ def main():
         #CHECK
         ###################################
         for i in range(0,len(nodesO)):
-            myData =[[test[j] ,nodesO[i].getOutput(),sin(test[j])]]
+            myData =[[test[j] * (max - min) + min,2*(nodesO[i].getOutput() * (max - min) + min),2*(test[j] * (max - min) + min)]]
             myFile = myFile = open('test.csv','a')
             with myFile:
                 writer = csv.writer(myFile)
                 writer.writerows(myData)
-            print("beginning input: " + str(test[j] ) + " current result: " + str(nodesO[i].getOutput()) + " actual: " + str(sin(test[j])))
+            print("beginning input: " + str(test[j] * (max - min) + min) + " current result: " + str(2*(nodesO[i].getOutput() * (max - min) + min)) + " actual: " + str(2*(test[j] * (max - min) + min)))
+            #print("beginning input: " + str(test[j]) + " current result: " + str(nodesO[i].getOutput()) + " actual: " + str(test[j]*2) + " iteration: " + str(count))
         j = j + 1
     exit()
 
