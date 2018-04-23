@@ -14,7 +14,7 @@ class InputNode(object):
 
 class BiasNode(object):
 
-    def getOutput(self,max,min):
+    def getOutput(self):
         return 1.0
 
 class HiddenNode(object):
@@ -60,8 +60,8 @@ class OutputNode(object):
     def getOutput(self):
         return self.output
 
-    def setDelta(self,x,max,min):
-        error = sin(x) - sin(self.output)
+    def setDelta(self,x,type):
+        error = x - self.output
         self.delta = -error * self.derivative()
 
     def getDelta(self):
