@@ -1,4 +1,4 @@
-from Nodes import *
+from Nodes_Normalization import *
 import csv
 import os
 from random import *
@@ -11,7 +11,7 @@ def main():
     os.remove('final.csv') if os.path.exists('final.csv') else None
     count = 0
     j = 0
-    alpha = .09
+    alpha = .5
     value = 0.0
     outputList = []
     outputList1 = []
@@ -42,18 +42,19 @@ def main():
         writer.writerows(myData)
 
     #data = open("small.csv",'r')
-    data = open("f(x)2x.csv",'r')
-    #data = open("sin(x).csv",'r')
+    #data = open("f(x)2x.csv",'r')
+    data = open("sin(x).csv",'r')
     with data as d:
         reader = csv.reader(d)
         for row in reader:
             outputList1.append(float(row[0]))
-    max = np.amax(outputList1)*2
-    min = np.amin(outputList1)*2
+    max = np.amax(outputList1)
+    min = np.amin(outputList1)
+
 
     #data = open("small.csv",'r')
-    data = open("f(x)2x.csv",'r')
-    #data = open("sin(x).csv",'r')
+    #data = open("f(x)2x.csv",'r')
+    data = open("sin(x).csv",'r')
     with data as d:
         reader = csv.reader(d)
         for row in reader:
@@ -66,7 +67,7 @@ def main():
 
     counter = len(train)
 
-    while count != 10000:
+    while count != 800:
         ###################################
         #FORWARD
         ###################################
@@ -100,16 +101,15 @@ def main():
         #CHECK
         ###################################
         for i in range(0,len(nodesO)):
-            outputs.append(2*(nodesO[i].getOutput() * (max - min) + min))
-            errors.append(pow(train[j]-nodesO[i].getOutput(),2))
+            outputs.append(sin(nodesO[i].getOutput() * (max - min) + min))
+            errors.append(pow(sin(nodesO[i].getOutput() * (max - min) + min) - sin(train[j] * (max - min) + min),2))
             if RMSE <= oldRMSE:
-                myData =[[train[j] * (max - min) + min,2*(nodesO[i].getOutput() * (max - min) + min),2*(train[j] * (max - min) + min)]]
+                myData =[[train[j] * (max - min) + min,(nodesO[i].getOutput() * (max - min) + min),(train[j] * (max - min) + min)]]
                 myFile = myFile = open('outputs.csv','a')
                 with myFile:
                     writer = csv.writer(myFile)
                     writer.writerows(myData)
-            print("beginning input: " + str(train[j] * (max - min) + min) + " current result: " + str(2*(nodesO[i].getOutput() * (max - min) + min)) + " actual: " + str(2*(train[j] * (max - min) + min)) + " epoch: " + str(count))
-            #print("beginning input: " + str(train[j]) + " current result: " + str(nodesO[i].getOutput()) + " actual: " + str(train[j]*2) + " iteration: " + str(count))
+            print("beginning input: " + str(train[j] * (max - min) + min) + " current result: " + str(sin(nodesO[i].getOutput() * (max - min) + min)) + " actual: " + str(sin(train[j] * (max - min) + min)) + " epoch: " + str(count))
 
 
         ###################################
@@ -165,7 +165,7 @@ def main():
             if count != 10000:
                 errors = []
                 outputs = []
-            #shuffle(train)
+            shuffle(train)
 
     myData = [[]]
     myData = [["weightsHO:"]]
@@ -203,7 +203,7 @@ def main():
         writer.writerows(myData)
 
     for i in range(0,len(outputs)):
-        myData = [[outputs[i],2*(train[i] * (max - min) + min)]]
+        myData = [[outputs[i],(train[i] * (max - min) + min)]]
         myFile = myFile = open('final.csv','a')
         with myFile:
             writer = csv.writer(myFile)
@@ -248,13 +248,12 @@ def main():
         #CHECK
         ###################################
         for i in range(0,len(nodesO)):
-            myData =[[test[j] * (max - min) + min,2*(nodesO[i].getOutput() * (max - min) + min),2*(test[j] * (max - min) + min)]]
+            myData =[[test[j] * (max - min) + min,sin(nodesO[i].getOutput() * (max - min) + min),sin(test[j] * (max - min) + min)]]
             myFile = myFile = open('test.csv','a')
             with myFile:
                 writer = csv.writer(myFile)
                 writer.writerows(myData)
-            print("beginning input: " + str(test[j] * (max - min) + min) + " current result: " + str(2*(nodesO[i].getOutput() * (max - min) + min)) + " actual: " + str(2*(test[j] * (max - min) + min)))
-            #print("beginning input: " + str(test[j]) + " current result: " + str(nodesO[i].getOutput()) + " actual: " + str(test[j]*2) + " iteration: " + str(count))
+            print("beginning input: " + str(test[j] * (max - min) + min) + " current result: " + str(sin(nodesO[i].getOutput() * (max - min) + min)) + " actual: " + str(sin(test[j] * (max - min) + min)))
         j = j + 1
     exit()
 

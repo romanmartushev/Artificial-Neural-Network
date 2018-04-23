@@ -73,4 +73,3 @@ class OutputNode(object):
 
     def derivative(self):
         return (1/(1 + np.exp(-self.output))) * (1- 1/(1 + np.exp(-self.output)))
-sin
