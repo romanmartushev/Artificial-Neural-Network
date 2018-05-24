@@ -10,58 +10,46 @@ def main():
     os.remove('final.csv') if os.path.exists('final.csv') else None
     count = 0
     j = 0
-    alpha = .5
     value = 0.0
-    outputList = []
-    outputList1 = []
+    population = []
+    inputOutput = []
+    crimes = []
     RMSE = 0.0
     errors = []
-    max = 0.0
-    min = 0.0
     # Array for each hidden node with as many values input + bias nodes
-    weightsHI = [[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)]]
+    weightsHI = [[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1)]]
     # Array for each output node with as many values as hidden nodes + bias Nodes
-    weightsOH = [[uniform(-1,1),uniform(-1,1),uniform(-1,1),uniform(-1,1),uniform(-1,1)],[uniform(-1,1),uniform(-1,1),uniform(-1,1),uniform(-1,1),uniform(-1,1)]]
+    weightsOH = [[uniform(-1,1),uniform(-1,1),uniform(-1,1),uniform(-1,1)]]
     nodesI = [InputNode(),BiasNode()]
-    nodesH = [HiddenNode(),HiddenNode(),HiddenNode(),HiddenNode(),BiasNode()]
-    nodesO = [OutputNode(),OutputNode()]
+    nodesH = [HiddenNode(),HiddenNode(),HiddenNode(),BiasNode()]
+    nodesO = [OutputNode()]
 
-    myData =[["input","cosOutput","cosActual","sinOutput","sinActual"]]
+    myData =[["Input","OutputActual","OutputObserved"]]
     myFile = myFile = open('test.csv','a')
     with myFile:
         writer = csv.writer(myFile)
         writer.writerows(myData)
 
-    data = open("cos_sin.csv",'r')
+    data = open("population_numbUrban.csv",'r')
     with data as d:
         reader = csv.reader(d)
         for row in reader:
-            outputList1.append(float(row[0]))
+            inputOutput.append([float(row[0]),float(row[1])])
 
-    max = np.amax(outputList1)
-    min = np.amin(outputList1)
+    shuffle(inputOutput)
+    inputOutput_l = len(inputOutput)/2
+    inputOutput_train = inputOutput[:int(inputOutput_l)]
+    inputOutput_test = inputOutput[int(inputOutput_l):]
 
-    data = open("cos_sin.csv",'r')
-    with data as d:
-        reader = csv.reader(d)
-        for row in reader:
-            outputList.append(float((float(row[0]) - min)/(max - min)))
-
-    shuffle(outputList)
-    l = len(outputList)/2
-    train = outputList[:int(l)]
-    test = outputList[int(l):]
-
-    counter = len(train)
-
-    while count != 70:
+    counter = len(inputOutput_train)
+    Epochs = int(input("Enter the number of Epochs to train: "))
+    alpha = float(input("Enter the learning rate: "))
+    while count != Epochs:
         ###################################
         #FORWARD
         ###################################
         #Set inputs for all non-bias nodes Input Layer
-        for i in range(0,len(nodesI)):
-            if type(nodesI[i]) is not  BiasNode:
-                nodesI[i].setInput(train[j])
+        nodesI[0].setInput(inputOutput_train[j][0])
 
         #Set inputs for all non-bias nodes Hidden Layer
         for k in range(0,len(nodesH)):
@@ -81,8 +69,8 @@ def main():
         ###################################
         #CHECK
         ###################################
-        errors.append(pow(sin(nodesO[1].getOutput() * (max - min) + min) - sin(train[j] * (max - min) + min) + cos(nodesO[0].getOutput() * (max - min) + min) - cos(train[j] * (max - min) + min),2))
-        print("beginning input: " + str(train[j] * (max - min) + min) + " current COS result: " + str(cos(nodesO[0].getOutput() * (max - min) + min)) + " actual COS: " + str(cos(train[j] * (max - min) + min)) + " current SIN result: " + str(sin(nodesO[1].getOutput() * (max - min) + min)) + " actual SIN: " + str(sin(train[j] * (max - min) + min)) + " epoch: " + str(count))
+        errors.append(pow(nodesO[0].getOutput() - inputOutput_test[j][1],2))
+        print("Input: " + str(inputOutput_train[j][0]) + " OutputActual: " + str(inputOutput_train[j][1])+  " OutputObserved: " +str(nodesO[0].getOutput()) + " epoch: " + str(count))
 
 
         ###################################
@@ -90,8 +78,7 @@ def main():
         ###################################
 
         #Calculate Delta for Output Layer
-        for i in range(0,len(nodesO)):
-            nodesO[i].setDelta(train[j],i)
+        nodesO[0].setDelta(inputOutput_train[j][1])
 
         #Calculate Delta for all non-bias nodes Hidden Layer
         for k in range(0,len(nodesH)):
@@ -128,9 +115,9 @@ def main():
                 writer.writerows(myData)
             j = 0
             count = count + 1
-            if count != 70:
+            if count != Epochs:
                 errors = []
-            shuffle(train)
+            shuffle(inputOutput_train)
 
     myData = [[]]
     myData = [["weightsHO:"]]
@@ -164,15 +151,14 @@ def main():
     ###################################
     #RUN TESTING SET
     ###################################
-    counter = len(test)
+    counter = len(inputOutput_test)
     j = 0
+    count = 0
     while j != counter: ###################################
         #FORWARD TESTING SET
         ###################################
         #Set inputs for all non-bias nodes Input Layer
-        for i in range(0,len(nodesI)):
-            if type(nodesI[i]) is not  BiasNode:
-                nodesI[i].setInput(test[j])
+        nodesI[0].setInput(inputOutput_test[j][0])
 
         #Set inputs for all non-bias nodes Hidden Layer
         for k in range(0,len(nodesH)):
@@ -192,12 +178,12 @@ def main():
         ###################################
         #CHECK
         ###################################
-        myData =[[test[j] * (max - min) + min,cos(nodesO[0].getOutput() * (max - min) + min),cos(test[j] * (max - min) + min),sin(nodesO[1].getOutput() * (max - min) + min),sin(test[j] * (max - min) + min)]]
+        myData =[[inputOutput_test[j][0],inputOutput_test[j][1],nodesO[0].getOutput()]]
         myFile = myFile = open('test.csv','a')
         with myFile:
             writer = csv.writer(myFile)
             writer.writerows(myData)
-        print("beginning input: " + str(train[j] * (max - min) + min) + " current COS result: " + str(cos(nodesO[0].getOutput() * (max - min) + min)) + " actual COS: " + str(cos(train[j] * (max - min) + min)) + " current SIN result: " + str(sin(nodesO[1].getOutput() * (max - min) + min)) + " actual SIN: " + str(sin(train[j] * (max - min) + min)) + " epoch: " + str(count))
+        print("Input: " + str(inputOutput_test[j][0]) + " OutputActual: " + str(inputOutput_test[j][1])+  " OutputObserved: " +str(nodesO[0].getOutput()) + " epoch: " + str(count))
         j += 1
     exit()
 main()

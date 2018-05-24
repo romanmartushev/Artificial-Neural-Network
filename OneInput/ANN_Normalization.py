@@ -118,7 +118,7 @@ def main():
                     weightsHI[i][k] = weightsHI[i][k] - 2*(alpha) * nodesH[i].getDelta() * nodesI[k].getOutput()
         j += 1
         if j == counter:
-            RMSE = sqrt(np.sum(errors).mean())
+            RMSE = sqrt(np.average(errors))
             if RMSE < .1:
                 myData =[[RMSE]]
                 myFile = myFile = open('RMSE.csv','a')
